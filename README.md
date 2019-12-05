@@ -5,7 +5,7 @@
 ```bash
 cd ~/MotionPlanning_ws
 ```
-2. After get to MotionPlanning_ws,enter
+2. After get to MotionPlanning_ws, enter
 ```bash
 source devel/setup.sh
 ```    
@@ -37,16 +37,16 @@ sh  /home/mrjohd/clion/bin/clion.sh
     Go to MotionPlanning_ws  
 ```bash
 cd ~MotionPlanning_ws
-```  
-    Enter following command  
+```
+Enter following command  
 ```bash
 catin_make
 ```  
-    After compile is done without any error messeges, enter  
+After compile is done without any error messeges, enter  
 ```bash
 roslaunch vehicle demo.launch
 ```  
-                  and  
+and  
 ```bash
 rosrun uncertain_kinodynamic main
 ```  
@@ -54,10 +54,9 @@ rosrun uncertain_kinodynamic main
 ##Folder description
 * UncertainKino  
 This is a actual source code directory.  
- - How to access to the source code  
- Go to "/uncertain_kinodynamic/src" there exist following three files.  
+How to access to the source code   
+Go to "/uncertain_kinodynamic/src" there exist following three files.  
  main.cpp   Scene.cpp   StateSpaces.cpp   UncertainKinodynamicPlanner.cpp   UncertainKinodynamicPlanner_RRTstar.cpp  
-
 First, main.cpp runs total procedure, global planning, local planning and displaying.  
 Second, Scene.cpp consist the synthetic scene with obstacles.  
 Third, StateSpaces.cpp checks the state validity.  
