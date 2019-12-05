@@ -25,16 +25,16 @@ $/opt/ros/$(ROS_VERSION)/share
 $/home/mrjohd/MotionPlanning_ws/src:/opt/ros/$(ROS_VERSION)/share
 ```  
 3. If you are ...  
-  A. using CLion  
-    Enter following command (Should set the current shell as workspace!!)  
+A. using CLion  
+Enter following command (Should set the current shell as workspace!!)  
 ```bash    
-sh  /home/mrjohd/clion/bin/clion.sh
+sh /home/mrjohd/clion/bin/clion.sh
 ```  
-    And open "/UncertainKino/uncertain_kinodynamic/CMakeList.txt" as a project.   
-    Then run main.  
+And open "/UncertainKino/uncertain_kinodynamic/CMakeList.txt" as a project.   
+Then run main.  
 
-  B. Not using CLion, just using terminal  
-    Go to MotionPlanning_ws  
+B. Not using CLion, just using terminal  
+Go to MotionPlanning_ws  
 ```bash
 cd ~MotionPlanning_ws
 ```
