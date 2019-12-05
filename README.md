@@ -56,14 +56,14 @@ rosrun uncertain_kinodynamic main
 This is a actual source code directory.  
 How to access to the source code   
 Go to "/uncertain_kinodynamic/src" there exist following three files.  
- main.cpp   Scene.cpp   StateSpaces.cpp   UncertainKinodynamicPlanner.cpp   UncertainKinodynamicPlanner_RRTstar.cpp  
+ main.cpp,   Scene.cpp,   StateSpaces.cpp,   UncertainKinodynamicPlanner.cpp,   UncertainKinodynamicPlanner_RRTstar.cpp  
 First, main.cpp runs total procedure, global planning, local planning and displaying.  
 Second, Scene.cpp consist the synthetic scene with obstacles.  
 Third, StateSpaces.cpp checks the state validity.  
 Fourth, UncertainKinodynamicPlanner.cpp and UncertainKinodynamicPlanner_RRTstar.cpp are those who contains each planner's implementation.  
               SST with control                      RRT* with geometric    
 Plus under "/uncertain_kinodynamic/include/uncertain_kinodynamic" there are header files such as  
-Scene.h   StateSpaces.h   UncertainKinodynamicPlanner.h   UncertainKinodynamicPlanner_RRTstar.h  
+Scene.h,  StateSpaces.h,   UncertainKinodynamicPlanner.h,   UncertainKinodynamicPlanner_RRTstar.h  
 They just contains each source codes' information which has same name.  
 
 * vehicle  
