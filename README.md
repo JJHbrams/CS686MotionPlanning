@@ -7,13 +7,13 @@
 ```
 2. After get to MotionPlanning_ws,enter
 ```bash
-    $source devel/setup.sh
+    source devel/setup.sh
 ```    
   This will make your shell as a ROS workspace.  
   Should do this once you open new shell.  
   To check if your workspace setting is correct...  
   ```bash
-    $echo echo $ROS_PACKAGE_PATH        
+    echo $ROS_PACKAGE_PATH        
   ```
    If the setting is not correct you would see  
    ```bash
@@ -29,7 +29,7 @@
   A. using CLion  
     Enter following command (Should set the current shell as workspace!!)  
 ```bash    
-      $sh /home/mrjohd/clion/bin/clion.sh
+      /home/mrjohd/clion/bin/clion.sh
 ```      
     And open "/UncertainKino/uncertain_kinodynamic/CMakeList.txt" as a project.   
     Then run main.
@@ -37,22 +37,22 @@
   B. Not using CLion, just using terminal  
     Go to MotionPlanning_ws  
     ```bash
-      $cd ~MotionPlanning_ws
+      cd ~MotionPlanning_ws
     ```
     Enter following command  
     ```bash
-      $catin_make
+      catin_make
     ```
     After compile is done without any error messeges, enter  
     ```bash
-      $roslaunch vehicle demo.launch
+      roslaunch vehicle demo.launch
     ```
                   and  
     ```bash
-      $rosrun uncertain_kinodynamic main
+      rosrun uncertain_kinodynamic main
     ```
 
-#Folder description
+##Folder description
 * UncertainKino  
 This is a actual source code directory.  
  - How to access to the source code  
@@ -73,5 +73,5 @@ This is a collision checking configuration for robot model,vehicle, two wheeled 
 Moveit based collision checker.  
 to run the demo.  
 ```bash
-$roslaunch vehicle demo.launch
+roslaunch vehicle demo.launch
 ```  
