@@ -72,10 +72,12 @@
 #define MAX_ROW 6
 #define MAX_WORDS 20
 
-#define G_PLANTIME  10.0 // Global planner planning time
-#define L_PLANTIME  3.0 // Local planner planning time
 
-#define SAMPLING_R  30//해당 범위 이내의 waypoint sampling
+#define G_PLANTIME  5.0 // Global planner planning time
+#define L_PLANTIME  5.0 // Local planner planning time
+
+#define SAMPLING_R  10//해당 범위 이내의 waypoint sampling
+#define S_RADIUS  5    //Local planner 탐색 범위
 
 void propagate(const ompl::base::State *start, const ompl::control::Control *control, const double duration, ompl::base::State *result)
 {
@@ -262,32 +264,28 @@ int main(int argc, char** argv) {
         uint wpt_idx_next = 0;
 
         #define MAX_WPT_IDX (NoPathPoints-1)
+        uint NoPathPoints2;
+        double local_s[3], local_g[3];
+        //Initial start and goal point
+        local_s[0] = robot_traj.joint_trajectory.points[0].positions[0];
+        local_s[1] = robot_traj.joint_trajectory.points[0].positions[1];
+        local_s[2] = robot_traj.joint_trajectory.points[0].positions[2];
+        wpt_idx_next = wpt_idx + rand()%SAMPLING_R;
+        local_g[0] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[0];
+        local_g[1] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[1];
+        local_g[2] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[2];
 
         while(wpt_idx<MAX_WPT_IDX){
-          
-            wpt_idx_next = wpt_idx + rand()%SAMPLING_R;//Update waypoint index
-            while(wpt_idx_next == wpt_idx || wpt_idx_next > MAX_WPT_IDX)    wpt_idx_next = wpt_idx + rand()%SAMPLING_R;//In case wpt index doesn't change
-            std::cout << "Wpt index : " << wpt_idx << ", Wpt index next : " << wpt_idx_next << ", Wpt index MAX : " << NoPathPoints << std::endl;
-
-            double local_s[3], local_g[3];
-            local_s[0] = robot_traj.joint_trajectory.points[wpt_idx].positions[0];
-            local_s[1] = robot_traj.joint_trajectory.points[wpt_idx].positions[1];
-            local_s[2] = robot_traj.joint_trajectory.points[wpt_idx].positions[2];
-
-            local_g[0] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[0];
-            local_g[1] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[1];
-            local_g[2] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[2];
-
             // State space, SE(2)
             auto state_space(std::make_shared<ompl::base::SE2StateSpace>());
             // State space bounds
             ompl::base::RealVectorBounds bounds(2);
             // x
-            bounds.setLow(0, local_g[0]-3.0);
-            bounds.setHigh(0, local_g[0]+3.0);
+            bounds.setLow(0, local_g[0]-S_RADIUS);
+            bounds.setHigh(0, local_g[0]+S_RADIUS);
             // y
-            bounds.setLow(1, local_g[1]-3.0);
-            bounds.setHigh(1, local_g[1]+3.0);
+            bounds.setLow(1, local_g[1]-S_RADIUS);
+            bounds.setHigh(1, local_g[1]+S_RADIUS);
             // yaw
             bounds.setLow(2, -M_PI);
             bounds.setHigh(2, M_PI);
@@ -373,7 +371,7 @@ int main(int argc, char** argv) {
               }
               filein.close();
 
-              uint NoPathPoints2 = path.getStateCount();//State
+              NoPathPoints2 = path.getStateCount();//State
               ROS_INFO("\nNo. of States2 = %d\n", NoPathPoints2);
 
               robot_traj2.joint_trajectory.joint_names = active_joint_names;
@@ -398,13 +396,82 @@ int main(int argc, char** argv) {
               display_trajectory2.trajectory.push_back(robot_traj2);
               display_pub2.publish(display_trajectory2);
 
+              // Prepare for next planning
+              wpt_idx_next = wpt_idx + rand()%SAMPLING_R;//Update waypoint index
+              while(wpt_idx_next == wpt_idx || wpt_idx_next > MAX_WPT_IDX)    wpt_idx_next = wpt_idx + rand()%SAMPLING_R;//In case wpt index doesn't change
+              std::cout << "Wpt index : " << wpt_idx << ", Wpt index next : " << wpt_idx_next << ", Wpt index MAX : " << NoPathPoints << std::endl;
+              wpt_idx = wpt_idx_next;//Store next waypoint
             }
             else
               std::cout << "No local solution found" << std::endl;
 
-            wpt_idx = wpt_idx_next;//Store next waypoint
+            // Next planning's start and goal setting
+            local_s[0] = robot_traj2.joint_trajectory.points[NoPathPoints2-1].positions[0];
+            local_s[1] = robot_traj2.joint_trajectory.points[NoPathPoints2-1].positions[1];
+            local_s[2] = robot_traj2.joint_trajectory.points[NoPathPoints2-1].positions[2];
+
+            local_g[0] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[0];
+            local_g[1] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[1];
+            local_g[2] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[2];
+
+
+            // Start, Goal marker
+            visualization_msgs::Marker points;
+            geometry_msgs::Point pt;
+            points.header.frame_id ="world";
+            points.header.stamp= ros::Time();
+
+            points.ns="Start_Pt";
+            points.id = 0;
+            points.type = visualization_msgs::Marker::POINTS;
+            points.scale.x = 0.3;
+            points.scale.y = 0.3;
+            points.color.a = 1.0; // Don't forget to set the alpha!
+            points.color.r = 0.0f;
+            points.color.g = 1.0f;
+            points.color.b = 0.0f;
+            pt.x = q_start[0];
+            pt.y = q_start[1];
+            points.points.push_back(pt);
+            point_pub.publish(points);//Pulish Start
+
+            points.points.clear();
+            points.ns="local Goal";
+            points.id = 1;
+            points.type = visualization_msgs::Marker::POINTS;
+            points.scale.x = 0.3;
+            points.scale.y = 0.3;
+            points.color.r = 1.0f;
+            points.color.b = 0.0f;
+            points.color.g = 1.0f;
+            pt.x = local_g[0];
+            pt.y = local_g[1];
+            points.points.push_back(pt);
+            point_pub.publish(points);// Publish localGoal
+
+            points.points.clear();
+            points.ns="Goal_Pt";
+            points.id = 1;
+            points.type = visualization_msgs::Marker::POINTS;
+            points.scale.x = 0.3;
+            points.scale.y = 0.3;
+            points.color.r = 1.0f;
+            points.color.b = 0.0f;
+            points.color.g = 0.0f;
+            pt.x = q_goal[0];
+            pt.y = q_goal[1];
+            points.points.push_back(pt);
+            point_pub.publish(points);// Publish Goal
+
+            //Path visulaization
+            path_pub.publish(path_vis);
+            path_pub2.publish(path_vis2);
+
         }
+        std::cout << "Done!" << std::endl;
+        /*
         std::cout << "Display!" << std::endl;
+
         while(ros::ok()){
           // Start, Goal marker
           visualization_msgs::Marker points;
@@ -444,6 +511,7 @@ int main(int argc, char** argv) {
           path_pub.publish(path_vis);
           path_pub2.publish(path_vis2);
         }
+        */
 
         ros::Duration(1.0).sleep();
 
