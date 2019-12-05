@@ -1,0 +1,6 @@
+controller_list:
+  - name: fake_vehicle_controller
+    joints:
+      - base_x_joint
+      - base_y_joint
+      - base_yaw_joint
