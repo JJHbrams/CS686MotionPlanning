@@ -3,54 +3,53 @@
 # How to run
 1. Open the terminal and
 ```bash
-  cd ~/MotionPlanning_ws
+cd ~/MotionPlanning_ws
 ```
 2. After get to MotionPlanning_ws,enter
 ```bash
-    source devel/setup.sh
+source devel/setup.sh
 ```    
   This will make your shell as a ROS workspace.  
   Should do this once you open new shell.  
   To check if your workspace setting is correct...  
-  ```bash
-    echo $ROS_PACKAGE_PATH        
-  ```
-   If the setting is not correct you would see  
-   ```bash
-    $/opt/ros/$(ROS_VERSION)/share
-   ```
+```bash
+echo $ROS_PACKAGE_PATH        
+```
+  If the setting is not correct you would see  
+```bash
+$/opt/ros/$(ROS_VERSION)/share
+```
    ex)ROS melodic use, /opt/ros/melodic/share  
    Unless you would see  
-   ```bash
-    $/home/mrjohd/MotionPlanning_ws/src:/opt/ros/$(ROS_VERSION)/share
-   ```  
-
+```bash
+$/home/mrjohd/MotionPlanning_ws/src:/opt/ros/$(ROS_VERSION)/share
+```  
 3. If you are ...  
   A. using CLion  
     Enter following command (Should set the current shell as workspace!!)  
 ```bash    
-      /home/mrjohd/clion/bin/clion.sh
-```      
+sh  /home/mrjohd/clion/bin/clion.sh
+```  
     And open "/UncertainKino/uncertain_kinodynamic/CMakeList.txt" as a project.   
-    Then run main.
+    Then run main.  
 
   B. Not using CLion, just using terminal  
     Go to MotionPlanning_ws  
-    ```bash
-      cd ~MotionPlanning_ws
-    ```
+```bash
+cd ~MotionPlanning_ws
+```  
     Enter following command  
-    ```bash
-      catin_make
-    ```
+```bash
+catin_make
+```  
     After compile is done without any error messeges, enter  
-    ```bash
-      roslaunch vehicle demo.launch
-    ```
+```bash
+roslaunch vehicle demo.launch
+```  
                   and  
-    ```bash
-      rosrun uncertain_kinodynamic main
-    ```
+```bash
+rosrun uncertain_kinodynamic main
+```  
 
 ##Folder description
 * UncertainKino  
