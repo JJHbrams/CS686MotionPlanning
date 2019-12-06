@@ -40,7 +40,7 @@ cd ~MotionPlanning_ws
 ```
 Enter following command  
 ```bash
-catin_make
+catkin_make
 ```  
 After compile is done without any error messeges, enter  
 ```bash
