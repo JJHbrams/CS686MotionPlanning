@@ -477,49 +477,6 @@ int main(int argc, char** argv) {
 
         }
         std::cout << "Done!" << std::endl;
-        /*
-        std::cout << "Display!" << std::endl;
-
-        while(ros::ok()){
-          // Start, Goal marker
-          visualization_msgs::Marker points;
-          geometry_msgs::Point pt;
-          points.header.frame_id ="world";
-          points.header.stamp= ros::Time();
-
-          points.ns="Start_Pt";
-          points.id = 0;
-          points.type = visualization_msgs::Marker::POINTS;
-          points.scale.x = 0.3;
-          points.scale.y = 0.3;
-          points.color.a = 1.0; // Don't forget to set the alpha!
-          points.color.r = 0.0f;
-          points.color.g = 1.0f;
-          points.color.b = 0.0f;
-          pt.x = q_start[0];
-          pt.y = q_start[1];
-          points.points.push_back(pt);
-          point_pub.publish(points);//Pulish Start
-
-          points.points.clear();
-          points.ns="Goal_Pt";
-          points.id = 1;
-          points.type = visualization_msgs::Marker::POINTS;
-          points.scale.x = 0.3;
-          points.scale.y = 0.3;
-          points.color.r = 1.0f;
-          points.color.b = 0.0f;
-          points.color.g = 0.0f;
-          pt.x = q_goal[0];
-          pt.y = q_goal[1];
-          points.points.push_back(pt);
-          point_pub.publish(points);// Publish Goal
-
-          //Path visulaization
-          path_pub.publish(path_vis);
-          path_pub2.publish(path_vis2);
-        }
-        */
 
         ros::Duration(1.0).sleep();
 
