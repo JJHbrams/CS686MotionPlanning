@@ -76,10 +76,10 @@
 #define MAX_WORDS 20// Each data's length, ex)x=4.33221...2 : Total 20 words
 // Planner setting
 #define G_PLANTIME  5.0      // Global planner planning time(sec)
-#define L_PLANTIME  1.0      // Local planner planning time(sec)
+#define L_PLANTIME  5.0      // Local planner planning time(sec)
 // Local planner's local search setting
-#define SAMPLING_R  15      //해당 범위 이내의 waypoint sampling(현재 scene과 설정 상 Global planner의 전체 point수가 대체로 97~129 정도)
-#define S_RADIUS    3       //Local planner 탐색 범위 (속도 bound에 따라 적절한 웨이포인트 샘플링 거리 및 로컬 플래닝 범위값이 있는듯)
+#define SAMPLING_R  5      //해당 범위 이내의 waypoint sampling(현재 scene과 설정 상 Global planner의 전체 point수가 대체로 97~129 정도)
+#define S_RADIUS    5       //Local planner 탐색 범위 (속도 bound에 따라 적절한 웨이포인트 샘플링 거리 및 로컬 플래닝 범위값이 있는듯)
 
 void propagate(const ompl::base::State *start, const ompl::control::Control *control, const double duration, ompl::base::State *result){
     // Propagation function local planner
@@ -309,8 +309,8 @@ int main(int argc, char** argv) {
 
             // Control space bounds
             ompl::base::RealVectorBounds control_bounds(2);//Speed boundary
-            control_bounds.setLow(-0.1);//vx
-            control_bounds.setHigh(0.1);//vy
+            control_bounds.setLow(-0.07);//vx
+            control_bounds.setHigh(0.07);//vy
             control_bounds.setLow(2,-M_PI);
             control_bounds.setHigh(2, M_PI);
             control_space->setBounds(control_bounds);
