@@ -19,6 +19,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include <ros/ros.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
@@ -199,11 +200,53 @@ int main(int argc, char** argv) {
 //        simple_setup->getPathSimplifier()->simplifyMax(p);
         simple_setup_geo->getPathSimplifier()->smoothBSpline(p);
 
-        //Save path information as text
+        //Save leadpath information as text
         std::fstream fileout("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::out);
         p.printAsMatrix(fileout);
         //p.printAsMatrix(std::cout);
         fileout.close();
+
+        //Read leadpath and divide it into constatnt distance
+        std::fstream filein("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::in);
+
+        char word;
+        char data_geo[MAX_COlUMN][MAX_ROW/2][MAX_WORDS]={0};
+        int i=0, j=0, k;
+        //Read text
+        while(filein.get(word)){
+            if((word == ' ') || (word == '\n') || (k>=MAX_WORDS)){
+              //Next column
+              k=0;
+              j++;
+              if(j>=MAX_ROW){
+              //Next row
+                  j=0;
+                  i++;
+              }
+            }
+            else{
+              data_geo[i][j][k] = word;
+              k++;
+            }
+        }
+        filein.close();
+
+        double x,y,xn,yn,dx,dy;
+        double dist=0;
+        double wpt_data[1000][2] = {0};
+        int cnt=0;
+        for(uint i = 0; i < NoPathPoints-1; i++){
+            x = std::stod(static_cast<const std::string>(data_geo[i][0]));     y = std::stod(static_cast<const std::string>(data_geo[i][1]));
+            xn = std::stod(static_cast<const std::string>(data_geo[i+1][0]));  yn = std::stod(static_cast<const std::string>(data_geo[i+1][1]));
+            dx = xn-x;                                                         dy = yn-y;
+            dist = sqrt(pow(dx,2)+pow(dy,2));
+            int MAX_local_wpt_idx = dist/SAMPLING_R;
+            for(uint k=0;k<MAX_local_wpt_idx;k++){
+              wpt_data[cnt][0] = x+k*(dx/MAX_local_wpt_idx);
+              wpt_data[cnt][1] = y+k*(dy/MAX_local_wpt_idx));
+              cnt++;
+            }
+        }
 
         ros::Publisher display_pub = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
         ros::Publisher display_pub2 = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_local_path", 1, true);
@@ -240,7 +283,9 @@ int main(int argc, char** argv) {
           StateTypePtr rstate = static_cast<StateTypePtr>(p.getState(i));
           robot_traj.joint_trajectory.points[i].positions.resize(num_dof);
           for (uint j = 0; j < num_dof; j++){
-              robot_traj.joint_trajectory.points[i].positions[j] = rstate->values[j];
+              //robot_traj.joint_trajectory.points[i].positions[j] = rstate->values[j];
+              double traj_value = std::stod(static_cast<const std::string>(wpt_data[i][j]));
+              robot_traj.joint_trajectory.points[i].positions[j] = traj_value;
           }
           pose.pose.position.x = robot_traj.joint_trajectory.points[i].positions[0];
           pose.pose.position.y = robot_traj.joint_trajectory.points[i].positions[1];
