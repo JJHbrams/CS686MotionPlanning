@@ -534,8 +534,8 @@ int main(int argc, char** argv) {
         }
         std::cout << "Done!" << std::endl;
         ros::Time End_time = ros::Time::now();
-        ros::Time planning_time = End_time - Start_time;
-        ROS_INFO("Total Path Planning time :  %f", planning_time.toSec());
+        //ros::Time planning_time = End_time - Start_time;
+        ROS_INFO("Total Path Planning time :  %f", (End_time - Start_time).toSec());
 
         ros::Duration(1.0).sleep();
 
