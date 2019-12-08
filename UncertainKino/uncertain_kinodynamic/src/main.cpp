@@ -77,7 +77,8 @@
 #define G_PLANTIME  5.0 // Global planner planning time
 #define L_PLANTIME  5.0 // Local planner planning time
 
-#define SAMPLING_R  10//해당 범위 이내의 waypoint sampling
+#define DIST_DENOM  15
+#define SAMPLING_R  5//해당 범위 이내의 waypoint sampling
 #define S_RADIUS  5    //Local planner 탐색 범위
 
 void propagate(const ompl::base::State *start, const ompl::control::Control *control, const double duration, ompl::base::State *result)
@@ -198,7 +199,8 @@ int main(int argc, char** argv) {
 //        simple_setup->simplifySolution();
         ompl::geometric::PathGeometric &p = simple_setup_geo->getSolutionPath();
 //        simple_setup->getPathSimplifier()->simplifyMax(p);
-        simple_setup_geo->getPathSimplifier()->smoothBSpline(p);
+//        simple_setup_geo->getPathSimplifier()->smoothBSpline(p);
+        uint NoPathPoints = p.getStateCount();
 
         //Save leadpath information as text
         std::fstream fileout("src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::out);
@@ -270,8 +272,7 @@ int main(int argc, char** argv) {
 
         const moveit::core::JointModelGroup* model_group = planning_scene->getRobotModel()->getJointModelGroup(PLANNING_GROUP);
         const std::vector<std::string>& active_joint_names = model_group->getActiveJointModelNames();
-        uint NoPathPoints = p.getStateCount();
-
+        
         robot_traj.joint_trajectory.joint_names = active_joint_names;
         robot_traj.joint_trajectory.points.resize(p.getStateCount());
 
