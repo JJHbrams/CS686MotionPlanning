@@ -201,13 +201,13 @@ int main(int argc, char** argv) {
         simple_setup_geo->getPathSimplifier()->smoothBSpline(p);
 
         //Save leadpath information as text
-        std::fstream fileout("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::out);
+        std::fstream fileout("src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::out);
         p.printAsMatrix(fileout);
         //p.printAsMatrix(std::cout);
         fileout.close();
 
         //Read leadpath and divide it into constatnt distance
-        std::fstream filein("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::in);
+        std::fstream filein("src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::in);
 
         char word;
         char data_geo[MAX_COlUMN][MAX_ROW/2][MAX_WORDS]={0};
@@ -388,11 +388,11 @@ int main(int argc, char** argv) {
               ompl::control::PathControl &path = simple_setup->getSolutionPath();
               //path.printAsMatrix(std::cout);
 
-              std::fstream fileout("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::out);
+              std::fstream fileout("src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::out);
               path.printAsMatrix(fileout);
               fileout.close();
 
-              std::fstream filein("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::in);
+              std::fstream filein("src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::in);
 
               char word;
               char data[MAX_COlUMN][MAX_ROW][MAX_WORDS]={0};
