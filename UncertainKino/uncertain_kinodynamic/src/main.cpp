@@ -77,8 +77,8 @@
 #define G_PLANTIME  5.0 // Global planner planning time
 #define L_PLANTIME  5.0 // Local planner planning time
 
-#define DIST_DENOM  0.08
-#define SAMPLING_R  10//해당 범위 이내의 waypoint sampling
+#define DIST_DENOM  0.03
+#define SAMPLING_R  20//해당 범위 이내의 waypoint sampling
 #define S_RADIUS  5    //Local planner 탐색 범위
 
 void propagate(const ompl::base::State *start, const ompl::control::Control *control, const double duration, ompl::base::State *result)
@@ -204,13 +204,13 @@ int main(int argc, char** argv) {
         ROS_INFO("No. of Waypoints = %d", NoPathPoints);
 
         //Save leadpath information as text
-        std::fstream fileout("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::out);
+        std::fstream fileout("src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::out);
         p.printAsMatrix(fileout);
         //p.printAsMatrix(std::cout);
         fileout.close();
 
         //Read leadpath and divide it into constatnt distance
-        std::fstream filein("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::in);
+        std::fstream filein("src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::in);
 
         char word_geo;
         char data_geo[MAX_COlUMN][4][MAX_WORDS]={0};
@@ -359,8 +359,8 @@ int main(int argc, char** argv) {
 
             // Control space bounds
             ompl::base::RealVectorBounds control_bounds(2);
-            control_bounds.setLow(-0.05);
-            control_bounds.setHigh(0.05);
+            control_bounds.setLow(-0.06);
+            control_bounds.setHigh(0.06);
             control_bounds.setLow(2,-M_PI);
             control_bounds.setHigh(2, M_PI);
             control_space->setBounds(control_bounds);
@@ -406,11 +406,11 @@ int main(int argc, char** argv) {
                 ompl::control::PathControl &path = simple_setup->getSolutionPath();
                 //path.printAsMatrix(std::cout);
 
-                std::fstream fileout("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::out);
+                std::fstream fileout("src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::out);
                 path.printAsMatrix(fileout);
                 fileout.close();
 
-                std::fstream filein("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::in);
+                std::fstream filein("src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::in);
 
                 char word;
                 char data[MAX_COlUMN][MAX_ROW][MAX_WORDS]={0};
