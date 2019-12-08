@@ -192,6 +192,7 @@ int main(int argc, char** argv) {
     ROS_INFO("Start : %f , %f , %f   \nGoal : %f , %f , %f", q_start[0], q_start[1], q_start[2], q_goal[0], q_goal[1], q_goal[2]);
 
     // set planner
+    ros::Time Start_time = ros::Time::now();
     simple_setup_geo->setPlanner(ompl::base::PlannerPtr(new ompl::geometric::UncertainKinodynamicPlanner_RRTstar(simple_setup_geo->getSpaceInformation())));
     simple_setup_geo->solve(ompl::base::timedPlannerTerminationCondition(G_PLANTIME));
 
@@ -532,6 +533,9 @@ int main(int argc, char** argv) {
 
         }
         std::cout << "Done!" << std::endl;
+        ros::Time End_time = ros::Time::now();
+        ros::Time planning_time = End_time - Start_time;
+        ROS_INFO("Total Path Planning time :  %f", planning_time.toSec());
 
         ros::Duration(1.0).sleep();
 
