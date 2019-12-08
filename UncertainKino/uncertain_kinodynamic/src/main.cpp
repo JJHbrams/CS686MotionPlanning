@@ -77,8 +77,8 @@
 #define G_PLANTIME  5.0 // Global planner planning time
 #define L_PLANTIME  5.0 // Local planner planning time
 
-#define DIST_DENOM  15
-#define SAMPLING_R  5//해당 범위 이내의 waypoint sampling
+#define DIST_DENOM  0.08
+#define SAMPLING_R  10//해당 범위 이내의 waypoint sampling
 #define S_RADIUS  5    //Local planner 탐색 범위
 
 void propagate(const ompl::base::State *start, const ompl::control::Control *control, const double duration, ompl::base::State *result)
@@ -89,10 +89,10 @@ void propagate(const ompl::base::State *start, const ompl::control::Control *con
     const double* ctrl = control->as<ompl::control::RealVectorControlSpace::ControlType>()->values;
 
     result->as<ompl::base::SE2StateSpace::StateType>()->setXY(
-        pos[0] + ctrl[0] * duration * cos(rot),
-        pos[1] + ctrl[0] * duration * sin(rot));
+            pos[0] + ctrl[0] * duration * cos(rot),
+            pos[1] + ctrl[0] * duration * sin(rot));
     result->as<ompl::base::SE2StateSpace::StateType>()->setYaw(
-        rot    + ctrl[1] * duration);
+            rot    + ctrl[1] * duration);
 }
 
 int main(int argc, char** argv) {
@@ -201,54 +201,73 @@ int main(int argc, char** argv) {
 //        simple_setup->getPathSimplifier()->simplifyMax(p);
 //        simple_setup_geo->getPathSimplifier()->smoothBSpline(p);
         uint NoPathPoints = p.getStateCount();
+        ROS_INFO("No. of Waypoints = %d", NoPathPoints);
 
         //Save leadpath information as text
-        std::fstream fileout("src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::out);
+        std::fstream fileout("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::out);
         p.printAsMatrix(fileout);
         //p.printAsMatrix(std::cout);
         fileout.close();
 
         //Read leadpath and divide it into constatnt distance
-        std::fstream filein("src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::in);
+        std::fstream filein("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::in);
 
-        char word;
-        char data_geo[MAX_COlUMN][MAX_ROW/2][MAX_WORDS]={0};
+        char word_geo;
+        char data_geo[MAX_COlUMN][4][MAX_WORDS]={0};
         int i=0, j=0, k;
         //Read text
-        while(filein.get(word)){
-            if((word == ' ') || (word == '\n') || (k>=MAX_WORDS)){
-              //Next column
-              k=0;
-              j++;
-              if(j>=MAX_ROW){
-              //Next row
-                  j=0;
-                  i++;
-              }
+        while(filein.get(word_geo)){
+            //filein.get(word);
+            if((word_geo == ' ') || (word_geo == '\n') || (k>=MAX_WORDS)){
+                //Next column       Next row           Next value
+                k=0;
+                j++;
+                if(j>=4){
+                    //Next row
+                    j=0;
+                    i++;
+                }
             }
             else{
-              data_geo[i][j][k] = word;
-              k++;
+                data_geo[i][j][k] = word_geo;
+                k++;
             }
         }
         filein.close();
 
-        double x,y,xn,yn,dx,dy;
-        double dist=0;
-        double wpt_data[1000][2] = {0};
-        int cnt=0;
+        double x,y,yaw,xn,yn,yawn,dx,dy,dyaw;
+        double dist=0, head=0;
+        std::vector<std::vector<double> > wpt_data;
+        int NoNewPathPoints=0;
         for(uint i = 0; i < NoPathPoints-1; i++){
-            x = std::stod(static_cast<const std::string>(data_geo[i][0]));     y = std::stod(static_cast<const std::string>(data_geo[i][1]));
-            xn = std::stod(static_cast<const std::string>(data_geo[i+1][0]));  yn = std::stod(static_cast<const std::string>(data_geo[i+1][1]));
-            dx = xn-x;                                                         dy = yn-y;
+            x = std::stod(static_cast<const std::string>(data_geo[i][0]));
+            y = std::stod(static_cast<const std::string>(data_geo[i][1]));
+            yaw = std::stod(static_cast<const std::string>(data_geo[i][2]));
+
+            xn = std::stod(static_cast<const std::string>(data_geo[i+1][0]));
+            yn = std::stod(static_cast<const std::string>(data_geo[i+1][1]));
+            yawn = std::stod(static_cast<const std::string>(data_geo[i+1][2]));
+
+            dx = xn-x;
+            dy = yn-y;
+            dyaw = yawn-yaw;
+
             dist = sqrt(pow(dx,2)+pow(dy,2));
+            //std::cout<<"Dist : "<<dist<<std::endl;
             int MAX_local_wpt_idx = dist/DIST_DENOM;
+            //std::cout<<"MAX_local_wpt_idx : "<<MAX_local_wpt_idx<<std::endl;
             for(uint k=0;k<MAX_local_wpt_idx;k++){
-              wpt_data[cnt][0] = x+k*(dx/MAX_local_wpt_idx);
-              wpt_data[cnt][1] = y+k*(dy/MAX_local_wpt_idx));
-              cnt++;
+                std::vector<double> temp;
+                temp.push_back(x+k*(dx/MAX_local_wpt_idx));
+                temp.push_back(y+k*(dy/MAX_local_wpt_idx));
+                temp.push_back(yaw+k*(dyaw/MAX_local_wpt_idx));
+                //std::cout<<"temp[0] : "<<temp[0]<<"     temp[1] : "<<temp[1]<<std::endl;
+                wpt_data.push_back(temp);
+                //std::cout<<"wpt_data : "<<wpt_data[NoNewPathPoints][0]<<", "<<wpt_data[NoNewPathPoints][1]<<", "<<wpt_data[NoNewPathPoints][2]<<std::endl;
+                NoNewPathPoints++;
             }
         }
+        std::cout<<"No. of New Waypoints = "<< NoNewPathPoints << std::endl;
 
         ros::Publisher display_pub = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
         ros::Publisher display_pub2 = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_local_path", 1, true);
@@ -272,27 +291,25 @@ int main(int argc, char** argv) {
 
         const moveit::core::JointModelGroup* model_group = planning_scene->getRobotModel()->getJointModelGroup(PLANNING_GROUP);
         const std::vector<std::string>& active_joint_names = model_group->getActiveJointModelNames();
-        
-        robot_traj.joint_trajectory.joint_names = active_joint_names;
-        robot_traj.joint_trajectory.points.resize(p.getStateCount());
 
-        ROS_INFO("No. of Waypoints = %d", NoPathPoints);
+        robot_traj.joint_trajectory.joint_names = active_joint_names;
+        //robot_traj.joint_trajectory.points.resize(p.getStateCount());
+        robot_traj.joint_trajectory.points.resize(NoNewPathPoints);
 
         typedef ompl::base::RealVectorStateSpace::StateType* StateTypePtr;
-        for(uint i = 0; i < NoPathPoints; i++){
-          // Primitive path
-          StateTypePtr rstate = static_cast<StateTypePtr>(p.getState(i));
-          robot_traj.joint_trajectory.points[i].positions.resize(num_dof);
-          for (uint j = 0; j < num_dof; j++){
-              //robot_traj.joint_trajectory.points[i].positions[j] = rstate->values[j];
-              double traj_value = std::stod(static_cast<const std::string>(wpt_data[i][j]));
-              robot_traj.joint_trajectory.points[i].positions[j] = traj_value;
-          }
-          pose.pose.position.x = robot_traj.joint_trajectory.points[i].positions[0];
-          pose.pose.position.y = robot_traj.joint_trajectory.points[i].positions[1];
-          path_vis.poses.push_back(pose);
+        for(uint i = 0; i < NoNewPathPoints; i++){
+            // Primitive path
+            StateTypePtr rstate = static_cast<StateTypePtr>(p.getState(i));
+            robot_traj.joint_trajectory.points[i].positions.resize(num_dof);
+            for (uint j = 0; j < num_dof; j++){
+                //robot_traj.joint_trajectory.points[i].positions[j] = rstate->values[j];
+                robot_traj.joint_trajectory.points[i].positions[j] = wpt_data[i][j];
+            }
+            pose.pose.position.x = robot_traj.joint_trajectory.points[i].positions[0];
+            pose.pose.position.y = robot_traj.joint_trajectory.points[i].positions[1];
+            path_vis.poses.push_back(pose);
 
-          robot_traj.joint_trajectory.points[i].time_from_start = ros::Duration(0.0);
+            robot_traj.joint_trajectory.points[i].time_from_start = ros::Duration(0.0);
         }
         //display_trajectory.trajectory.push_back(robot_traj);
         //display_pub.publish(display_trajectory);
@@ -309,7 +326,7 @@ int main(int argc, char** argv) {
         uint wpt_idx = 0;// index of waypoint for local planner
         uint wpt_idx_next = 0;
 
-        #define MAX_WPT_IDX (NoPathPoints-1)
+#define MAX_WPT_IDX (NoNewPathPoints-1)
         uint NoPathPoints2;
         double local_s[3], local_g[3];
         //Initial start and goal point
@@ -383,73 +400,73 @@ int main(int argc, char** argv) {
             simple_setup->solve(ompl::base::timedPlannerTerminationCondition(L_PLANTIME));
 
             if (simple_setup->haveSolutionPath()){
-              std::cout << "Found solution:" << std::endl;
+                std::cout << "Found solution:" << std::endl;
 
-              // Store path
-              ompl::control::PathControl &path = simple_setup->getSolutionPath();
-              //path.printAsMatrix(std::cout);
+                // Store path
+                ompl::control::PathControl &path = simple_setup->getSolutionPath();
+                //path.printAsMatrix(std::cout);
 
-              std::fstream fileout("src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::out);
-              path.printAsMatrix(fileout);
-              fileout.close();
+                std::fstream fileout("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::out);
+                path.printAsMatrix(fileout);
+                fileout.close();
 
-              std::fstream filein("src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::in);
+                std::fstream filein("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::in);
 
-              char word;
-              char data[MAX_COlUMN][MAX_ROW][MAX_WORDS]={0};
-              int i=0, j=0, k;
-              //Read text
-              while(filein.get(word)){
-                  if((word == ' ') || (word == '\n') || (k>=MAX_WORDS)){
-                    //Next column
-                    k=0;
-                    j++;
-                    if(j>=MAX_ROW){
-                    //Next row
-                        j=0;
-                        i++;
+                char word;
+                char data[MAX_COlUMN][MAX_ROW][MAX_WORDS]={0};
+                int i=0, j=0, k;
+                //Read text
+                while(filein.get(word)){
+                    if((word == ' ') || (word == '\n') || (k>=MAX_WORDS)){
+                        //Next column
+                        k=0;
+                        j++;
+                        if(j>=MAX_ROW){
+                            //Next row
+                            j=0;
+                            i++;
+                        }
                     }
-                  }
-                  else{
-                    data[i][j][k] = word;
-                    k++;
-                  }
-              }
-              filein.close();
+                    else{
+                        data[i][j][k] = word;
+                        k++;
+                    }
+                }
+                filein.close();
 
-              NoPathPoints2 = path.getStateCount();//State
-              ROS_INFO("\nNo. of States2 = %d\n", NoPathPoints2);
+                NoPathPoints2 = path.getStateCount();//State
+                ROS_INFO("\nNo. of States2 = %d\n", NoPathPoints2);
 
-              robot_traj2.joint_trajectory.joint_names = active_joint_names;
-              robot_traj2.joint_trajectory.points.resize(path.getStateCount());
+                robot_traj2.joint_trajectory.joint_names = active_joint_names;
+                robot_traj2.joint_trajectory.points.resize(path.getStateCount());
 
-              for(uint i = 0; i < NoPathPoints2; i++){
-                  robot_traj2.joint_trajectory.points[i].positions.resize(num_dof);
-                  for (uint j = 0; j < num_dof; j++){
-                      double traj_value = std::stod(static_cast<const std::string>(data[i][j]));
-                      //std::cout<<traj_value<<std::endl;
-                      robot_traj2.joint_trajectory.points[i].positions[j] = traj_value;
-                  }
-                  pose.pose.position.x = robot_traj2.joint_trajectory.points[i].positions[0];
-                  pose.pose.position.y = robot_traj2.joint_trajectory.points[i].positions[1];
-                  path_vis2.poses.push_back(pose);
+                for(uint i = 0; i < NoPathPoints2; i++){
+                    robot_traj2.joint_trajectory.points[i].positions.resize(num_dof);
+                    for (uint j = 0; j < num_dof; j++){
+                        double traj_value = std::stod(static_cast<const std::string>(data[i][j]));
+                        //std::cout<<traj_value<<std::endl;
+                        robot_traj2.joint_trajectory.points[i].positions[j] = traj_value;
+                    }
+                    pose.pose.position.x = robot_traj2.joint_trajectory.points[i].positions[0];
+                    pose.pose.position.y = robot_traj2.joint_trajectory.points[i].positions[1];
+                    path_vis2.poses.push_back(pose);
 
-                  robot_traj2.joint_trajectory.points[i].time_from_start = ros::Duration(0.0);
-              }
-              display_trajectory.trajectory.push_back(robot_traj);
-              display_pub.publish(display_trajectory);
+                    robot_traj2.joint_trajectory.points[i].time_from_start = ros::Duration(0.0);
+                }
+                display_trajectory.trajectory.push_back(robot_traj);
+                display_pub.publish(display_trajectory);
 
-              display_trajectory2.trajectory.push_back(robot_traj2);
-              display_pub2.publish(display_trajectory2);
+                display_trajectory2.trajectory.push_back(robot_traj2);
+                display_pub2.publish(display_trajectory2);
 
-              // Prepare for next planning
-              wpt_idx_next = wpt_idx + rand()%SAMPLING_R;//Update waypoint index
-              while(wpt_idx_next == wpt_idx || wpt_idx_next > MAX_WPT_IDX)    wpt_idx_next = wpt_idx + rand()%SAMPLING_R;//In case wpt index doesn't change
-              std::cout << "Wpt index : " << wpt_idx << ", Wpt index next : " << wpt_idx_next << ", Wpt index MAX : " << NoPathPoints << std::endl;
-              wpt_idx = wpt_idx_next;//Store next waypoint
+                // Prepare for next planning
+                wpt_idx_next = wpt_idx + rand()%SAMPLING_R;//Update waypoint index
+                while(wpt_idx_next == wpt_idx || wpt_idx_next > MAX_WPT_IDX)    wpt_idx_next = wpt_idx + rand()%SAMPLING_R;//In case wpt index doesn't change
+                std::cout << "Wpt index : " << wpt_idx << ", Wpt index next : " << wpt_idx_next << ", Wpt index MAX : " << NoPathPoints << std::endl;
+                wpt_idx = wpt_idx_next;//Store next waypoint
             }
             else
-              std::cout << "No local solution found" << std::endl;
+                std::cout << "No local solution found" << std::endl;
 
             // Next planning's start and goal setting
             local_s[0] = robot_traj2.joint_trajectory.points[NoPathPoints2-1].positions[0];
@@ -515,49 +532,6 @@ int main(int argc, char** argv) {
 
         }
         std::cout << "Done!" << std::endl;
-        /*
-        std::cout << "Display!" << std::endl;
-
-        while(ros::ok()){
-          // Start, Goal marker
-          visualization_msgs::Marker points;
-          geometry_msgs::Point pt;
-          points.header.frame_id ="world";
-          points.header.stamp= ros::Time();
-
-          points.ns="Start_Pt";
-          points.id = 0;
-          points.type = visualization_msgs::Marker::POINTS;
-          points.scale.x = 0.3;
-          points.scale.y = 0.3;
-          points.color.a = 1.0; // Don't forget to set the alpha!
-          points.color.r = 0.0f;
-          points.color.g = 1.0f;
-          points.color.b = 0.0f;
-          pt.x = q_start[0];
-          pt.y = q_start[1];
-          points.points.push_back(pt);
-          point_pub.publish(points);//Pulish Start
-
-          points.points.clear();
-          points.ns="Goal_Pt";
-          points.id = 1;
-          points.type = visualization_msgs::Marker::POINTS;
-          points.scale.x = 0.3;
-          points.scale.y = 0.3;
-          points.color.r = 1.0f;
-          points.color.b = 0.0f;
-          points.color.g = 0.0f;
-          pt.x = q_goal[0];
-          pt.y = q_goal[1];
-          points.points.push_back(pt);
-          point_pub.publish(points);// Publish Goal
-
-          //Path visulaization
-          path_pub.publish(path_vis);
-          path_pub2.publish(path_vis2);
-        }
-        */
 
         ros::Duration(1.0).sleep();
 
