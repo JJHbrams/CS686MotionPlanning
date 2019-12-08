@@ -242,7 +242,7 @@ int main(int argc, char** argv) {
             xn = std::stod(static_cast<const std::string>(data_geo[i+1][0]));  yn = std::stod(static_cast<const std::string>(data_geo[i+1][1]));
             dx = xn-x;                                                         dy = yn-y;
             dist = sqrt(pow(dx,2)+pow(dy,2));
-            int MAX_local_wpt_idx = dist/SAMPLING_R;
+            int MAX_local_wpt_idx = dist/DIST_DENOM;
             for(uint k=0;k<MAX_local_wpt_idx;k++){
               wpt_data[cnt][0] = x+k*(dx/MAX_local_wpt_idx);
               wpt_data[cnt][1] = y+k*(dy/MAX_local_wpt_idx));
