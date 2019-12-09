@@ -17,9 +17,10 @@
 
 #include <iostream>
 #include <fstream>
+#include<random>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
+#include <algorithm>
 #include <ros/ros.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
@@ -29,7 +30,7 @@
 #include <boost/scope_exit.hpp>
 #include <boost/date_time.hpp>
 #include <cstdlib>
-
+#include <math.h>
 // ompl
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/control/SimpleSetup.h>
@@ -67,22 +68,30 @@
 #include <uncertain_kinodynamic/UncertainKinodynamicPlanner.h>
 #include <uncertain_kinodynamic/UncertainKinodynamicPlanner_RRTstar.h>
 
+
+#include <cmath>
+#include <vector>
+using namespace std;
+
+
+// Vehicle degree of freedom (x,y,yaw)
 #define NUM_BASE_DOF 3
-
-#define MAX_COlUMN 1000
-#define MAX_ROW 6
-#define MAX_WORDS 20
-
-
-#define G_PLANTIME  5.0 // Global planner planning time
-#define L_PLANTIME  5.0 // Local planner planning time
-
-#define DIST_DENOM  0.03
+// Local planner's path data : Control path는 Geometry path처럼 path.getState() 가 먹히지 않아서 text로 저장한 후 읽어오는 방식으로 진행합니다.
+#define MAX_COlUMN 1000// Maximum number of local planner's path points
+#define MAX_ROW 6// Number of each path point's elements, (x,y,yaw,dx,dy,d_yaw)
+#define MAX_WORDS 20// Each data's length, ex)x=4.33221...2 : Total 20 words
+// Planner setting
+#define G_PLANTIME  10.0      // Global planner planning time(sec)
+#define L_PLANTIME  1.0      // Local planner planning time(sec)
+// Local planner's local search setting
+#define DIST_DENOM  0.08
 #define SAMPLING_R  20//해당 범위 이내의 waypoint sampling
-#define S_RADIUS  5    //Local planner 탐색 범위
+#define S_RADIUS    5       //Local planner 탐색 범위 (속도 bound에 따라 적절한 웨이포인트 샘플링 거리 및 로컬 플래닝 범위값이 있는듯)
 
-void propagate(const ompl::base::State *start, const ompl::control::Control *control, const double duration, ompl::base::State *result)
-{
+#define thres_Pearson 0.99 // Allowed Pearson value
+
+void propagate(const ompl::base::State *start, const ompl::control::Control *control, const double duration, ompl::base::State *result){
+    // Propagation function local planner
     const auto *se2state = start->as<ompl::base::SE2StateSpace::StateType>();
     const double* pos = se2state->as<ompl::base::RealVectorStateSpace::StateType>(0)->values;
     const double rot = se2state->as<ompl::base::SO2StateSpace::StateType>(1)->value;
@@ -94,6 +103,68 @@ void propagate(const ompl::base::State *start, const ompl::control::Control *con
     result->as<ompl::base::SE2StateSpace::StateType>()->setYaw(
             rot    + ctrl[1] * duration);
 }
+
+///*
+
+vector<double> operator-(vector<double> a, double b)
+{
+    vector<double> retvect;
+    for (int i = 0; i < a.size(); i++)
+    {
+        retvect.push_back(a[i] - b);
+    }
+    return retvect;
+}
+
+vector<double> operator*(vector<double> a, vector<double> b)
+{
+    vector<double> retvect;
+    for (int i = 0; i < a.size() ; i++)
+    {
+        retvect.push_back(a[i] * b[i]);
+    }
+    return retvect;
+}
+double suma(vector<double> a)
+{
+    double s = 0;
+    for (int i = 0; i < a.size(); i++)
+    {
+        s = s + a[i];
+    }
+    return s;
+}
+
+double mean(vector<double> a)
+{
+    return suma(a) / a.size();
+}
+
+
+
+double sqsum(vector<double> a)
+{
+    double s = 0;
+    for (int i = 0; i < a.size(); i++)
+    {
+        s = s + pow(a[i], 2);
+    }
+    return s;
+}
+
+double stdev(vector<double> nums)
+{
+    double N = nums.size();
+    return pow(sqsum(nums) / N - pow(suma(nums) / N, 2), 0.5);
+}
+
+
+
+double pearsoncoeff(vector<double> X, vector<double> Y)
+{
+    return suma((X - mean(X))*(Y - mean(Y))) / (X.size()*stdev(X)* stdev(Y));
+}
+//*/
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, "UncertainKinodynamic");
@@ -184,9 +255,9 @@ int main(int argc, char** argv) {
 
     // set goal state
     ScopedState q_goal(state_space_geo);
-    q_goal[0] = -3.3;
-    q_goal[1] = -3.3;
-    q_goal[2] = -M_PI;
+    q_goal[0] = -6.3;
+    q_goal[1] = -7.3;
+    q_goal[2] = -M_PI/2;
     simple_setup_geo->setGoalState(q_goal);
     simple_setup_geo->setStartAndGoalStates(q_start, q_goal);
     ROS_INFO("Start : %f , %f , %f   \nGoal : %f , %f , %f", q_start[0], q_start[1], q_start[2], q_goal[0], q_goal[1], q_goal[2]);
@@ -205,13 +276,13 @@ int main(int argc, char** argv) {
         ROS_INFO("No. of Waypoints = %d", NoPathPoints);
 
         //Save leadpath information as text
-        std::fstream fileout("src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::out);
+        std::fstream fileout("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::out);
         p.printAsMatrix(fileout);
         //p.printAsMatrix(std::cout);
         fileout.close();
 
         //Read leadpath and divide it into constatnt distance
-        std::fstream filein("src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::in);
+        std::fstream filein("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path_geo.txt", std::ios::in);
 
         char word_geo;
         char data_geo[MAX_COlUMN][4][MAX_WORDS]={0};
@@ -325,31 +396,56 @@ int main(int argc, char** argv) {
         display_trajectory.trajectory.clear();
 
         uint wpt_idx = 0;// index of waypoint for local planner
+        uint wpt_idx_pre = 0;
         uint wpt_idx_next = 0;
 
 #define MAX_WPT_IDX (NoNewPathPoints-1)
         uint NoPathPoints2;
         double local_s[3], local_g[3];
         //Initial start and goal point
-        local_s[0] = robot_traj.joint_trajectory.points[0].positions[0];
-        local_s[1] = robot_traj.joint_trajectory.points[0].positions[1];
-        local_s[2] = robot_traj.joint_trajectory.points[0].positions[2];
-        wpt_idx_next = wpt_idx + rand()%SAMPLING_R;
+        vector<double> points_x;
+        vector<double> points_y;
+        double pearson_value;
+        int num_wpt;
+
+        for(num_wpt = 1; num_wpt <= SAMPLING_R; num_wpt++){
+            points_x.clear();
+            points_y.clear();
+            for(int ind = wpt_idx; ind <= wpt_idx + num_wpt; ind++){
+                points_x.push_back(robot_traj.joint_trajectory.points[ind].positions[0]);
+                points_y.push_back(robot_traj.joint_trajectory.points[ind].positions[1]);
+            }
+            pearson_value = pearsoncoeff(points_x,points_y);
+            if(pearson_value < thres_Pearson)
+                break;
+        }
+
+        std::cout<<"pearson_value "<< pearson_value << std::endl;
+
+        local_s[0] = robot_traj.joint_trajectory.points[wpt_idx].positions[0];
+        local_s[1] = robot_traj.joint_trajectory.points[wpt_idx].positions[1];
+        local_s[2] = robot_traj.joint_trajectory.points[wpt_idx].positions[2];
+        wpt_idx_next = wpt_idx + num_wpt;
         local_g[0] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[0];
         local_g[1] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[1];
         local_g[2] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[2];
 
-        while(wpt_idx<MAX_WPT_IDX){
+
+
+        while(wpt_idx<=MAX_WPT_IDX){
+            std::cout << "\nStart Local planning" << std::endl;
+            std::cout << "Wpt index pre: " << wpt_idx_pre << "  Wpt index : " << wpt_idx << ", Wpt index MAX : " << MAX_WPT_IDX << std::endl;
+
             // State space, SE(2)
             auto state_space(std::make_shared<ompl::base::SE2StateSpace>());
             // State space bounds
             ompl::base::RealVectorBounds bounds(2);
             // x
-            bounds.setLow(0, local_g[0]-S_RADIUS);
-            bounds.setHigh(0, local_g[0]+S_RADIUS);
+            bounds.setLow(0, std::min(local_g[0]-S_RADIUS, local_s[0]-S_RADIUS));
+            bounds.setHigh(0, std::max(local_g[0]+S_RADIUS, local_s[0]+S_RADIUS));
             // y
-            bounds.setLow(1, local_g[1]-S_RADIUS);
-            bounds.setHigh(1, local_g[1]+S_RADIUS);
+            bounds.setLow(1, std::min(local_g[1]-S_RADIUS, local_s[1]-S_RADIUS));
+            bounds.setHigh(1, std::max(local_g[1]+S_RADIUS, local_s[1]+S_RADIUS));
             // yaw
             bounds.setLow(2, -M_PI);
             bounds.setHigh(2, M_PI);
@@ -360,8 +456,8 @@ int main(int argc, char** argv) {
 
             // Control space bounds
             ompl::base::RealVectorBounds control_bounds(2);
-            control_bounds.setLow(-0.06);
-            control_bounds.setHigh(0.06);
+            control_bounds.setLow(-0.065);
+            control_bounds.setHigh(0.065);
             control_bounds.setLow(2,-M_PI);
             control_bounds.setHigh(2, M_PI);
             control_space->setBounds(control_bounds);
@@ -407,11 +503,11 @@ int main(int argc, char** argv) {
                 ompl::control::PathControl &path = simple_setup->getSolutionPath();
                 //path.printAsMatrix(std::cout);
 
-                std::fstream fileout("src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::out);
+                std::fstream fileout("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::out);
                 path.printAsMatrix(fileout);
                 fileout.close();
 
-                std::fstream filein("src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::in);
+                std::fstream filein("/home/mrjohd/MotionPlanning_ws/src/UncertainKino/uncertain_kinodynamic/path.txt", std::ios::in);
 
                 char word;
                 char data[MAX_COlUMN][MAX_ROW][MAX_WORDS]={0};
@@ -460,24 +556,51 @@ int main(int argc, char** argv) {
                 display_trajectory2.trajectory.push_back(robot_traj2);
                 display_pub2.publish(display_trajectory2);
 
-                // Prepare for next planning
-                wpt_idx_next = wpt_idx + rand()%SAMPLING_R;//Update waypoint index
-                while(wpt_idx_next == wpt_idx || wpt_idx_next > MAX_WPT_IDX)    wpt_idx_next = wpt_idx + rand()%SAMPLING_R;//In case wpt index doesn't change
-                std::cout << "Wpt index : " << wpt_idx << ", Wpt index next : " << wpt_idx_next << ", Wpt index MAX : " << NoPathPoints << std::endl;
+                //std::cout << "Wpt index : " << wpt_idx << " wpt_idx + SAMPLING_R : " << wpt_idx + SAMPLING_R << std::endl;
+                //for(num_wpt = 1; num_wpt <= SAMPLING_R; num_wpt++){
+
+                num_wpt = 1;
+                int wpt_inx_temp = wpt_idx_pre + num_wpt;
+                while(num_wpt <= SAMPLING_R){
+                    points_x.clear();
+                    points_y.clear();
+
+                    for(int ind = wpt_idx_pre; ind <= wpt_inx_temp; ind++){
+                        points_x.push_back(robot_traj.joint_trajectory.points[ind].positions[0]);
+                        points_y.push_back(robot_traj.joint_trajectory.points[ind].positions[1]);
+                    }
+                    pearson_value = pearsoncoeff(points_x,points_y);
+                    if(pearson_value < thres_Pearson)
+                        break;
+                    num_wpt++;
+                    wpt_inx_temp = wpt_idx_pre + num_wpt;
+                    if(wpt_inx_temp > MAX_WPT_IDX)  break;
+                }
+                //std::cout << "Wpt index : " << wpt_idx << " wpt_idx + num_wpt : " << wpt_idx + num_wpt << std::endl;
+                std::cout<<"pearson_value "<< pearson_value << std::endl;
+
+                wpt_idx_next = wpt_idx + num_wpt;
+                while(wpt_idx_next > MAX_WPT_IDX)    wpt_idx_next = wpt_idx_next - 1;//In case next wpt index is out of range
+                std::cout << "Wpt index : " << wpt_idx << ", Wpt index next : " << wpt_idx_next << ", Wpt index MAX : " << MAX_WPT_IDX << std::endl;
+                wpt_idx_pre = wpt_idx;
                 wpt_idx = wpt_idx_next;//Store next waypoint
+
+                // Next planning's start and goal setting
+                local_s[0] = robot_traj2.joint_trajectory.points[NoPathPoints2-1].positions[0];
+                local_s[1] = robot_traj2.joint_trajectory.points[NoPathPoints2-1].positions[1];
+                local_s[2] = robot_traj2.joint_trajectory.points[NoPathPoints2-1].positions[2];
+
+                local_g[0] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[0];
+                local_g[1] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[1];
+                local_g[2] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[2];
             }
             else
                 std::cout << "No local solution found" << std::endl;
 
-            // Next planning's start and goal setting
-            local_s[0] = robot_traj2.joint_trajectory.points[NoPathPoints2-1].positions[0];
-            local_s[1] = robot_traj2.joint_trajectory.points[NoPathPoints2-1].positions[1];
-            local_s[2] = robot_traj2.joint_trajectory.points[NoPathPoints2-1].positions[2];
 
-            local_g[0] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[0];
-            local_g[1] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[1];
-            local_g[2] = robot_traj.joint_trajectory.points[wpt_idx_next].positions[2];
 
+            pearson_value = pearsoncoeff(points_x,points_y);
+            std::cout<<"pearson_value "<< pearson_value << std::endl;
 
             // Start, Goal marker
             visualization_msgs::Marker points;
@@ -531,11 +654,14 @@ int main(int argc, char** argv) {
             path_pub.publish(path_vis);
             path_pub2.publish(path_vis2);
 
+            if(wpt_idx_pre >= MAX_WPT_IDX)  break;
+
         }
         std::cout << "Done!" << std::endl;
         ros::Time End_time = ros::Time::now();
         //ros::Time planning_time = End_time - Start_time;
-        ROS_INFO("Total Path Planning time :  %f", (End_time - Start_time).toSec());
+        //ROS_INFO("Total Path Planning time :  %f", planning_time.toSec());
+        ROS_INFO("Total Path Planning time :  %f sec", (End_time - Start_time).toSec());
 
         ros::Duration(1.0).sleep();
 
