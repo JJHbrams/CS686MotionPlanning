@@ -10,20 +10,51 @@ Scene::Scene(planning_scene::PlanningScenePtr& planning_scene, std::string frame
 
 void Scene::addCollisionObjects(){
     std::vector<moveit_msgs::CollisionObject> collision_objects;
-    //                                                  x           y      z     dx     dy      dz  yaw
-    collision_objects.push_back(addBox("table.Up",     0.0,       0.0,   0.7,   0.6,   1.2,   0.05, 0.0));
-    collision_objects.push_back(addBox("table.leg01", -0.2,      -0.5,   0.35,   0.1,   0.1,    0.7, 0.0));
-    collision_objects.push_back(addBox("table.leg02", -0.2,       0.5,   0.35,   0.1,   0.1,    0.7, 0.0));
-    collision_objects.push_back(addBox("table.leg03",  0.2,      -0.5,   0.35,   0.1,   0.1,    0.7, 0.0));
-    collision_objects.push_back(addBox("table.leg04",  0.2,       0.5,   0.35,   0.1,   0.1,    0.7, 0.0));
-    collision_objects.push_back(addBox("s0",     0.0 + 2.0,   0.0+1.6,  1.33,   0.8,  0.28,   0.02, 0.0));
-    collision_objects.push_back(addBox("s1",     0.0 + 2.0,   0.0+1.6,  0.95,   0.8,  0.28,   0.02, 0.0));
-    collision_objects.push_back(addBox("s2",     0.0 + 2.0,   0.0+1.6,  0.62,   0.8,  0.28,   0.02, 0.0));
-    collision_objects.push_back(addBox("s3",     0.0 + 2.0,   0.0+1.6,  0.31,   0.8,  0.28,   0.02, 0.0));
-    collision_objects.push_back(addBox("s4",     0.0 + 2.0,   0.0+1.6,  0.01,   0.8,  0.28,   0.02, 0.0));
-    collision_objects.push_back(addBox("s5",     0.39+ 2.0,   0.0+1.6,  0.67,  0.02,  0.28,   1.34, 0.0));
-    collision_objects.push_back(addBox("s6",    -0.39+ 2.0,   0.0+1.6,  0.67,  0.02,  0.28,   1.34, 0.0));
-    collision_objects.push_back(addBox("s7",     0.0 + 2.0,  0.13+1.6,  0.67,   0.8,  0.02,   1.34, 0.0));
+
+
+    double table_x = 0.0;
+    double table_y = 0.0;
+    //                                                     x            y           z     dx   dy     dz  yaw
+    collision_objects.push_back(addBox("table1.Up",    table_x,     table_y,     0.7,  0.6, 1.2,   0.05, 0.0));
+    collision_objects.push_back(addBox("table1.leg01", table_x-0.2, table_y-0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+    collision_objects.push_back(addBox("table1.leg02", table_x-0.2, table_y+0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+    collision_objects.push_back(addBox("table1.leg03", table_x+0.2, table_y-0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+    collision_objects.push_back(addBox("table1.leg04", table_x+0.2, table_y+0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+
+    table_x = -1.0;
+    table_y = -1.0;
+    //                                                     x            y           z     dx   dy     dz  yaw
+    collision_objects.push_back(addBox("table2.Up",    table_x,     table_y,     0.7,  0.6, 1.2,   0.05, 0.0));
+    collision_objects.push_back(addBox("table2.leg01", table_x-0.2, table_y-0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+    collision_objects.push_back(addBox("table2.leg02", table_x-0.2, table_y+0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+    collision_objects.push_back(addBox("table2.leg03", table_x+0.2, table_y-0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+    collision_objects.push_back(addBox("table2.leg04", table_x+0.2, table_y+0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+
+    table_x = -1.0;
+    table_y = -5.0;
+    //                                                     x            y           z     dx   dy     dz  yaw
+    collision_objects.push_back(addBox("table3.Up",    table_x,     table_y,     0.7,  0.6, 1.2,   0.05, 0.0));
+    collision_objects.push_back(addBox("table3.leg01", table_x-0.2, table_y-0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+    collision_objects.push_back(addBox("table3.leg02", table_x-0.2, table_y+0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+    collision_objects.push_back(addBox("table3.leg03", table_x+0.2, table_y-0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+    collision_objects.push_back(addBox("table3.leg04", table_x+0.2, table_y+0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+    table_x = -5.0;
+    table_y = -7.0;
+    //                                                     x            y           z     dx   dy     dz  yaw
+    collision_objects.push_back(addBox("table4.Up",    table_x,     table_y,     0.7,  0.6, 1.2,   0.05, 0.0));
+    collision_objects.push_back(addBox("table4.leg01", table_x-0.2, table_y-0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+    collision_objects.push_back(addBox("table4.leg02", table_x-0.2, table_y+0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+    collision_objects.push_back(addBox("table4.leg03", table_x+0.2, table_y-0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+    collision_objects.push_back(addBox("table4.leg04", table_x+0.2, table_y+0.5, 0.35, 0.1, 0.1,   0.7, 0.0));
+
+    collision_objects.push_back(addBox("s0",     0.0 + 2.5,   0.0+1.6,  1.33,   0.8,  0.28,   0.02, 0.0));
+    collision_objects.push_back(addBox("s1",     0.0 + 2.5,   0.0+1.6,  0.95,   0.8,  0.28,   0.02, 0.0));
+    collision_objects.push_back(addBox("s2",     0.0 + 2.5,   0.0+1.6,  0.62,   0.8,  0.28,   0.02, 0.0));
+    collision_objects.push_back(addBox("s3",     0.0 + 2.5,   0.0+1.6,  0.31,   0.8,  0.28,   0.02, 0.0));
+    collision_objects.push_back(addBox("s4",     0.0 + 2.5,   0.0+1.6,  0.01,   0.8,  0.28,   0.02, 0.0));
+    collision_objects.push_back(addBox("s5",     0.39+ 2.5,   0.0+1.6,  0.67,  0.02,  0.28,   1.34, 0.0));
+    collision_objects.push_back(addBox("s6",    -0.39+ 2.5,   0.0+1.6,  0.67,  0.02,  0.28,   1.34, 0.0));
+    collision_objects.push_back(addBox("s7",     0.0 + 2.5,  0.13+1.6,  0.67,   0.8,  0.02,   1.34, 0.0));
     collision_objects.push_back(addBox("obs.01",       2.0,      -2.0,  0.25,   0.4,   1.7,    0.5, -0.6));
     collision_objects.push_back(addBox("obs.02",       1.5,      3.0,  0.25,   1.4,   1.7,    0.5, 0.0));
     collision_objects.push_back(addBox("obs.03",       0.0,      -2.0,  0.25,   0.5,   0.5,    0.5, 0.0));
