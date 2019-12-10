@@ -12,7 +12,7 @@ http://wiki.ros.org/ko/catkin/Tutorials/create_a_workspace
 Follow the indtruction. By the way, instead of 'catkin_ws', name it as 'MotionPLanning_ws'  
 
 3. Install OMPL - Opensource Motion Planning Library.  
-http://ompl.kavrakilab.org/installation.html
+http://ompl.kavrakilab.org/installation.html  
 Follow the link, and go to 'ROS' tab and follow the instruction.  
 
 4. Install Moveit! - for collision checking  
