@@ -6,12 +6,15 @@
 Link for installing ros-melodic version  
 http://wiki.ros.org/melodic/Installation/Ubuntu  
 Follow the instruction.  
+
 2. Once install ros, you need to define a workspace.  
 http://wiki.ros.org/ko/catkin/Tutorials/create_a_workspace  
 Follow the indtruction. By the way, instead of 'catkin_ws', name it as 'MotionPLanning_ws'  
+
 3. Install OMPL - Opensource Motion Planning Library.  
 http://ompl.kavrakilab.org/installation.html
 Follow the link, and go to 'ROS' tab and follow the instruction.  
+
 4. Install Moveit! - for collision checking  
 https://moveit.ros.org/install/
 Follow the instruction.  
