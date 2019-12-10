@@ -16,7 +16,7 @@ http://ompl.kavrakilab.org/installation.html
 Follow the link, and go to 'ROS' tab and follow the instruction.  
 
 4. Install Moveit! - for collision checking  
-https://moveit.ros.org/install/
+https://moveit.ros.org/install/  
 Follow the instruction.  
 
 *OMPL github...This would be helpful
